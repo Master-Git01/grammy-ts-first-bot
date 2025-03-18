@@ -17,6 +17,15 @@ bot.command("start", (ctx) =>
   ctx.reply("Привет! Отправь мне данные через Mini App.")
 );
 
+bot.on("message:web_app_data", async (ctx) => {
+  try {
+    const data = JSON.parse(ctx.message.web_app_data.data);
+    await ctx.reply(`Получены данные: ${JSON.stringify(data)}`);
+  } catch (error) {
+    await ctx.reply("Ошибка при обработке данных из Mini App.");
+  }
+});
+
 bot.catch((err) => {
   const ctx = err.ctx;
   console.error(`Error while handling update ${ctx.update.update_id}:`);
