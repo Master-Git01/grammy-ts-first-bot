@@ -13,6 +13,31 @@ app.use(express_1.default.json());
 const bot = new grammy_1.Bot(process.env.BOT_TOKEN || "");
 // Задаем chat_id, куда бот будет отправлять сообщение (можно задать в .env)
 const chatId = process.env.CHAT_ID || "";
+// Обрабатываем команду /start
+bot.command("start", (ctx) => ctx.reply("Привет! Отправь мне данные через Mini App."));
+bot.on("message:web_app_data", async (ctx) => {
+    try {
+        const data = JSON.parse(ctx.message.web_app_data.data);
+        await ctx.reply(`Получены данные: ${JSON.stringify(data)}`);
+    }
+    catch (error) {
+        await ctx.reply("Ошибка при обработке данных из Mini App.");
+    }
+});
+bot.catch((err) => {
+    const ctx = err.ctx;
+    console.error(`Error while handling update ${ctx.update.update_id}:`);
+    const e = err.error;
+    if (e instanceof grammy_1.GrammyError) {
+        console.error("Error in request:", e.description);
+    }
+    else if (e instanceof grammy_1.HttpError) {
+        console.error("Could not contact Telegram:", e);
+    }
+    else {
+        console.error("Unknown error:", e);
+    }
+});
 // Опционально запускаем бота (например, polling)
 bot.start();
 // Эндпоинт для приема данных из Mini App
