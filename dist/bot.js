@@ -9,10 +9,9 @@ const grammy_1 = require("grammy");
 const bot = new grammy_1.Bot(process.env.BOT_TOKEN || "");
 // Обрабатываем команду /start
 bot.command("start", async (ctx) => {
+    const keyboard = new grammy_1.InlineKeyboard().webApp("Открыть Mini App наконец-то! Как надо! Да!", process.env.WEBAPP_URL || "");
     await ctx.reply("Откройте Mini App и отправьте данные:", {
-        reply_markup: new grammy_1.Keyboard()
-            .webApp("Открыть Mini App наконец-то! Как надо! Да!", process.env.WEBAPP_URL || "") // Кнопка Mini App
-            .resized(), // Автоматическое изменение размера клавиатуры
+        reply_markup: keyboard,
     });
 });
 // Обрабатываем данные, полученные из Mini App
