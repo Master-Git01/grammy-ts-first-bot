@@ -1,44 +1,57 @@
-import express from "express";
-import { Bot, GrammyError, HttpError, InlineKeyboard } from "grammy";
 import dotenv from "dotenv";
-
 dotenv.config();
+import { Bot, Context, GrammyError, HttpError, Keyboard } from "grammy";
+import crypto from "crypto";
 
-const app = express();
-app.use(express.json());
-
-// Создаем бота с помощью grammY
 const bot = new Bot(process.env.BOT_TOKEN || "");
-// Задаем chat_id, куда бот будет отправлять сообщение (можно задать в .env)
-const chatId = process.env.CHAT_ID || "";
 
-// Обрабатываем команду /start с добавлением кнопки для запуска мини‑приложения
-bot.command("start", (ctx) => {
-  // Создаем клавиатуру с кнопкой, которая запускает мини‑приложение
-  // Замените process.env.WEBAPP_URL на реальный URL вашего мини‑приложения, если необходимо
-  const keyboard = new InlineKeyboard().webApp(
-    "Запустить Mini App",
-    process.env.WEBAPP_URL || "https://your-web-app-url.com"
-  );
+// Проверка авторизации пользователя через Telegram Login Widget
+function checkTelegramAuth(data: Record<string, string>): boolean {
+  const botToken = process.env.BOT_TOKEN || "";
+  const secretKey = crypto
+    .createHmac("sha256", Buffer.from(botToken, "utf-8"))
+    .digest();
 
-  return ctx.reply(
-    "Привет! Отправь мне данные через Mini App. Нажми на кнопку ниже, чтобы запустить его.",
-    {
-      reply_markup: keyboard,
-    }
-  );
+  const dataCheckString = Object.keys(data)
+    .filter((key) => key !== "hash")
+    .sort()
+    .map((key) => `${key}=${data[key]}`)
+    .join("\n");
+
+  const hash = crypto
+    .createHmac("sha256", secretKey)
+    .update(dataCheckString)
+    .digest("hex");
+  return hash === data.hash;
+}
+
+// Обрабатываем команду /start
+bot.command("start", async (ctx: Context) => {
+  await ctx.reply("Откройте Mini App и отправьте данные:", {
+    reply_markup: new Keyboard()
+      .webApp(
+        "Открыть Mini App наконец-то! Как надо! Да!",
+        process.env.WEBAPP_URL || ""
+      ) // Кнопка Mini App
+      .resized(), // Автоматическое изменение размера клавиатуры
+  });
 });
 
-// Обработка данных, полученных из Mini App через web_app_data
+// Обрабатываем данные из Mini App
 bot.on("message:web_app_data", async (ctx) => {
   try {
     const data = JSON.parse(ctx.message.web_app_data.data);
-    await ctx.reply(`Получены данные: ${JSON.stringify(data)}`);
+    if (!checkTelegramAuth(data)) {
+      await ctx.reply("Ошибка авторизации.");
+      return;
+    }
+    await ctx.reply(`Пользователь: ${data.userName}, Число: ${data.result}`);
   } catch (error) {
     await ctx.reply("Ошибка при обработке данных из Mini App.");
   }
 });
 
+// Обрабатываем ошибки
 bot.catch((err) => {
   const ctx = err.ctx;
   console.error(`Error while handling update ${ctx.update.update_id}:`);
@@ -53,30 +66,5 @@ bot.catch((err) => {
   }
 });
 
-// Опционально запускаем бота (например, polling)
+// Запускаем бота
 bot.start();
-
-// Эндпоинт для приема данных из Mini App (HTTP)
-app.post("/receive", async (req: any, res: any) => {
-  const { userName, result } = req.body;
-  if (!userName || !result) {
-    return res.status(400).json({ error: "Недостаточно данных" });
-  }
-
-  try {
-    // Отправляем сообщение в Telegram через bot.api.sendMessage
-    await bot.api.sendMessage(
-      chatId,
-      `Пользователь: ${userName} получил число: ${result}`
-    );
-    res.json({ success: true });
-  } catch (error) {
-    console.error("Ошибка отправки сообщения:", error);
-    res.status(500).json({ error: "Внутренняя ошибка сервера" });
-  }
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Backend-сервер запущен на порту ${PORT}`);
-});
