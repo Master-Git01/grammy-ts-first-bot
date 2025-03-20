@@ -9,9 +9,10 @@ const grammy_1 = require("grammy");
 const bot = new grammy_1.Bot(process.env.BOT_TOKEN || "");
 // Обрабатываем команду /start
 bot.command("start", async (ctx) => {
-    await ctx.reply("Привет, это Test App 👋 🚀 Получите самое крутое число в мире! Только у нас!", {
+    await ctx.reply(`Привет, это Test App 👋
+🚀 Получите самое крутое число в мире! Только у нас!`, {
         reply_markup: new grammy_1.Keyboard()
-            .webApp("Открыть Mini App наконец-то! Как надо! Да!", process.env.WEBAPP_URL || "") // Кнопка Mini App
+            .webApp("Открыть Test App", process.env.WEBAPP_URL || "") // Кнопка Mini App
             .resized(), // Автоматическое изменение размера клавиатуры
     });
 });
@@ -19,7 +20,8 @@ bot.command("start", async (ctx) => {
 bot.on("message:web_app_data", async (ctx) => {
     try {
         const data = JSON.parse(ctx.message.web_app_data.data);
-        await ctx.reply(`Пользователь: ${data.userName}, Число: ${data.result}`);
+        await ctx.reply(`Пользователь: ${data.userName},
+Ваше число: ${data.result}`);
     }
     catch (error) {
         await ctx.reply("Ошибка при обработке данных из Mini App.");

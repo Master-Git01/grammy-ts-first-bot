@@ -8,13 +8,10 @@ const bot = new Bot(process.env.BOT_TOKEN || "");
 bot.command("start", async (ctx: Context) => {
   await ctx.reply(
     `Привет, это Test App 👋
-    🚀 Получите самое крутое число в мире! Только у нас!`,
+🚀 Получите самое крутое число в мире! Только у нас!`,
     {
       reply_markup: new Keyboard()
-        .webApp(
-          "Открыть Mini App наконец-то! Как надо! Да!",
-          process.env.WEBAPP_URL || ""
-        ) // Кнопка Mini App
+        .webApp("Открыть Test App", process.env.WEBAPP_URL || "") // Кнопка Mini App
         .resized(), // Автоматическое изменение размера клавиатуры
     }
   );
@@ -24,7 +21,10 @@ bot.command("start", async (ctx: Context) => {
 bot.on("message:web_app_data", async (ctx) => {
   try {
     const data = JSON.parse(ctx.message.web_app_data.data);
-    await ctx.reply(`Пользователь: ${data.userName}, Число: ${data.result}`);
+    await ctx.reply(
+      `Пользователь: ${data.userName},
+Ваше число: ${data.result}`
+    );
   } catch (error) {
     await ctx.reply("Ошибка при обработке данных из Mini App.");
   }
